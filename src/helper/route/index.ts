@@ -124,7 +124,10 @@ export const basePath = (c: Context, index?: number): string => {
     for (let i = 0, len = paths.length; i < len; i++) {
       const pattern = getPattern(paths[i], paths[i + 1])
       if (pattern) {
-        const re = pattern[2] === true || pattern === '*' ? /[^\/]+/ : pattern[2]
+        const re =
+          pattern[2] === true || pattern === '*'
+            ? /[^\/]+/
+            : new RegExp(pattern[2].source.replace(/\$$/, ''))
         basePathLength += reqPath.substring(basePathLength + 1).match(re)?.[0].length || 0
       } else {
         basePathLength += paths[i].length

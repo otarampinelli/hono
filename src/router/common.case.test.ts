@@ -769,6 +769,48 @@ export const runTest = ({
       })
     })
 
+    describe('Capture regex param with alternation', () => {
+      beforeEach(() => {
+        router.add('GET', '/:lang{en|fr}', 'lang')
+      })
+
+      it('GET /en and /fr', () => {
+        for (const lang of ['en', 'fr']) {
+          const res = match('GET', `/${lang}`)
+          expect(res.length).toBe(1)
+          expect(res[0].handler).toEqual('lang')
+          expect(res[0].params['lang']).toBe(lang)
+        }
+      })
+
+      it('does not match a prefix or suffix of the alternatives', () => {
+        expect(match('GET', '/english').length).toBe(0)
+        expect(match('GET', '/xfr').length).toBe(0)
+        expect(match('GET', '/xrf').length).toBe(0)
+      })
+
+      it('does not match extra segments', () => {
+        expect(match('GET', '/en/x').length).toBe(0)
+      })
+    })
+
+    describe('Capture regex param with alternation and a following static segment', () => {
+      beforeEach(() => {
+        router.add('GET', '/:lang{en|fr}/about', 'about')
+      })
+
+      it('GET /en/about', () => {
+        const res = match('GET', '/en/about')
+        expect(res.length).toBe(1)
+        expect(res[0].params['lang']).toBe('en')
+      })
+
+      it('GET /english/about and /xfr/about', () => {
+        expect(match('GET', '/english/about').length).toBe(0)
+        expect(match('GET', '/xfr/about').length).toBe(0)
+      })
+    })
+
     describe('Capture complex multiple directories', () => {
       beforeEach(() => {
         router.add('GET', '/:first{.+}/middle-a/:reference?', '1')

@@ -993,6 +993,27 @@ describe('param and query', () => {
       expect(await res.json()).toEqual({ foo: undefined })
     })
   })
+
+  describe('param with regex alternation', () => {
+    const app = new Hono()
+    app.get('/:lang{en|fr}', (c) => c.text(`lang is ${c.req.param('lang')}`))
+    app.get('/x/:id', (c) => c.text('id'))
+
+    it('matches each alternative', async () => {
+      for (const lang of ['en', 'fr']) {
+        const res = await app.request(`http://localhost/${lang}`)
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe(`lang is ${lang}`)
+      }
+    })
+
+    it('does not match a prefix or suffix of an alternative', async () => {
+      for (const path of ['/english', '/xfr', '/xrf', '/en/x']) {
+        const res = await app.request(`http://localhost${path}`)
+        expect(res.status).toBe(404)
+      }
+    })
+  })
 })
 
 describe('c.req.path', () => {

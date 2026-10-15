@@ -1,6 +1,7 @@
 import { matchedRoutes, routePath, baseRoutePath, basePath } from '.'
 import { Context } from '../../context'
 import { Hono } from '../../hono'
+import { TrieRouter } from '../../router/trie-router'
 
 const defaultContextOptions = {
   executionCtx: {
@@ -236,5 +237,27 @@ describe('basePath', () => {
     })
 
     expect(basePath(c)).toBe('/sub-app-path/foo')
+  })
+
+  it('should return basePath when a sub app is mounted on a regex param with alternation', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+    const sub = new Hono()
+    sub.get('/hello', (c) => c.text(basePath(c)))
+    app.route('/:lang{en|fr}', sub)
+
+    for (const lang of ['en', 'fr']) {
+      const res = await app.request(`/${lang}/hello`)
+      expect(await res.text()).toBe(`/${lang}`)
+    }
+  })
+
+  it('should return basePath when a sub app is mounted on a trailing regex param', async () => {
+    const app = new Hono({ router: new TrieRouter() })
+    const sub = new Hono()
+    sub.get('/hello', (c) => c.text(basePath(c)))
+    app.route('/:id{[0-9]+}', sub)
+
+    const res = await app.request('/123/hello')
+    expect(await res.text()).toBe('/123')
   })
 })
